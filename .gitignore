@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.vercel/
+dist/
+build/
+*.log
+.env
+.env.local
+.env.production.local
+.DS_Store
+*.tsbuildinfo
+.gradle/
+local.properties
+*.apk
+*.aab
+firebase-service-account.json
+*-firebase-adminsdk-*.json

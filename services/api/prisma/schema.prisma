@@ -1,0 +1,195 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Platform {
+  ANDROID
+  WEB
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  name         String
+  role         Role            @default(USER)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  recipes      Recipe[]
+  comments     RecipeComment[]
+  likes        Like[]
+  savedRecipes SavedRecipe[]
+  notifications Notification[]
+  reports      Report[]        @relation("UserReports")
+  pushTokens   PushToken[]
+  adminLogs    AdminLog[]
+}
+
+model Recipe {
+  id              String            @id @default(uuid())
+  title           String
+  description     String?
+  ingredients     String[]          // Array of ingredient strings
+  instructions    String[]          // Array of instruction/step strings
+  servings        Int               @default(2)
+  prepTime        Int               @default(0) // in minutes
+  cookTime        Int               @default(0) // in minutes
+  difficulty      Difficulty        @default(MEDIUM)
+  image           String?           // WebP Optimized image URL
+  authorId        String
+  author          User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  isPublic        Boolean           @default(true)
+  isApproved      Boolean           @default(false)
+  confidenceScore Float             @default(1.0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  images          RecipeImage[]
+  comments        RecipeComment[]
+  likes           Like[]
+  savedRecipes    SavedRecipe[]
+  tags            RecipeTag[]       @relation("RecipeTags")
+  moderationQueue ModerationQueue?
+  aiReview        AIReview?
+  reports         Report[]
+}
+
+model RecipeImage {
+  id        String   @id @default(uuid())
+  url       String
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model RecipeTag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  recipes   Recipe[] @relation("RecipeTags")
+}
+
+model RecipeComment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+}
+
+model SavedRecipe {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+}
+
+model ModerationQueue {
+  id              String           @id @default(uuid())
+  recipeId        String           @unique
+  recipe          Recipe           @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  status          ModerationStatus @default(PENDING)
+  confidenceScore Float
+  reason          String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model AIReview {
+  id              String   @id @default(uuid())
+  recipeId        String   @unique
+  recipe          Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  rawOcrText      String
+  confidenceScore Float
+  safetyReport    Json     // Store safety parameters (incomplete instructions, raw meat, dangerous hacks etc.)
+  isWorkable      Boolean
+  suggestions     Json     // Auto cleanup suggestions
+  createdAt       DateTime @default(now())
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  reporterId  String
+  reporter    User     @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  recipeId    String
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  reason      String
+  isResolved  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  Platform
+  createdAt DateTime @default(now())
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Boolean  @default(false)
+  description String?
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+model AdminLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}

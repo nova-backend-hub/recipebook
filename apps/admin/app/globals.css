@@ -1,0 +1,34 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+  body {
+    @apply bg-[#0a0a0a] text-neutral-100 antialiased selection:bg-brand-900 selection:text-white;
+  }
+}
+
+/* Premium dark theme custom styles */
+.admin-card {
+  @apply bg-[#121212] border border-neutral-800/80 rounded-premium p-6 shadow-premium hover:border-neutral-700/50 transition-all duration-300;
+}
+
+.glowing-red-border {
+  box-shadow: 0 0 15px rgba(225, 29, 72, 0.15);
+}
+
+.transition-premium {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Custom premium scrollbars for admin logs */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-neutral-950;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-800 rounded-full hover:bg-brand-600 transition-colors;
+}

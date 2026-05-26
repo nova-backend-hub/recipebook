@@ -1,0 +1,7 @@
+steps:
+  # Build the container image referencing services/api/Dockerfile
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/project-e666a6d4-5797-4c41-aaf/cloud-run-source-deploy/recipebook-api:latest', '-f', 'services/api/Dockerfile', '.']
+images:
+  - 'us-central1-docker.pkg.dev/project-e666a6d4-5797-4c41-aaf/cloud-run-source-deploy/recipebook-api:latest'
+timeout: '900s'

@@ -1,0 +1,26 @@
+{
+  "name": "recipebook-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/admin",
+    "services/api",
+    "packages/ui",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=services/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:admin": "npm run dev --workspace=apps/admin",
+    "build:api": "npm run build --workspace=services/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:admin": "npm run build --workspace=apps/admin",
+    "start:api": "npm run start --workspace=services/api",
+    "start:web": "npm run start --workspace=apps/web",
+    "start:admin": "npm run start --workspace=apps/admin",
+    "prisma:generate": "npm run prisma:generate --workspace=services/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace=services/api",
+    "prisma:seed": "npm run prisma:seed --workspace=services/api"
+  }
+}
