@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.kapt")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
 }
@@ -51,7 +52,11 @@ android {
     }
 }
 
-// Fix: Prevent Hilt/KSP from mutating resolved test configurations
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
+}
+
 hilt {
     enableAggregatingTask = false
 }
@@ -73,16 +78,16 @@ dependencies {
     // 3. Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // 4. Room Database (Offline SQLite Cache)
+    // 4. Room Database (Offline SQLite Cache) - uses KSP
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
 
-    // 5. Dependency Injection (Hilt)
+    // 5. Dependency Injection (Hilt) - uses kapt (stable, unlike KSP for Hilt)
     val hiltVersion = "2.50"
     implementation("com.google.dagger:hilt-android:$hiltVersion")
-    ksp("com.google.dagger:hilt-compiler:$hiltVersion")
+    kapt("com.google.dagger:hilt-compiler:$hiltVersion")
 
     // 6. Retrofit & OkHttp Networking
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
