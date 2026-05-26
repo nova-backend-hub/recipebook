@@ -51,6 +51,11 @@ android {
     }
 }
 
+// Fix: Prevent Hilt/KSP from mutating resolved test configurations
+hilt {
+    enableAggregatingTask = false
+}
+
 dependencies {
     // 1. Androidx Platform Core
     implementation("androidx.core:core-ktx:1.12.0")
