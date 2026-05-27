@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Sparkles, Clock, Users, Heart, Bookmark, Loader2, ArrowRight } from "lucide-react";
+import { Search, Sparkles, Clock, Users, Heart, Bookmark, Loader2, ArrowRight, AlertCircle } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://recipebook-api-160271972570.us-central1.run.app";
 
 interface Recipe {
   id: string;
@@ -25,59 +27,21 @@ interface Recipe {
   isSavedByMe: boolean;
 }
 
-const mockRecipes: Recipe[] = [
-  {
-    id: "carbonara-mock-id",
-    title: "Classic Spaghetti Carbonara",
-    description: "A rich, creamy, and traditional Roman pasta dish made with eggs, hard cheese, cured pork, and black pepper.",
-    ingredients: ["400g Spaghetti", "150g Guanciale", "4 Large Eggs", "75g Pecorino Romano", "Black Pepper"],
-    instructions: ["Boil spaghetti in salted water.", "Fry guanciale until crispy.", "Whisk eggs with Pecorino.", "Toss pasta with guanciale fat, pour egg mixture off heat and stir rapidly."],
-    servings: 4,
-    prepTime: 10,
-    cookTime: 15,
-    difficulty: "MEDIUM",
-    image: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=800&auto=format&fit=crop&q=80",
-    authorName: "Sarah Chef",
-    confidenceScore: 0.96,
-    tags: ["Italian", "AI-Parsed"],
-    likesCount: 24,
-    commentsCount: 3,
-    isLikedByMe: false,
-    isSavedByMe: false
-  },
-  {
-    id: "blender-muffins-mock-id",
-    title: "Quick AI Banana Oatmeal Muffins",
-    description: "Easy and healthy breakfast muffins made in a single blender. No added sugar!",
-    ingredients: ["3 ripe bananas", "2 cups rolled oats", "2 large eggs", "1/3 cup honey", "1 tsp baking soda"],
-    instructions: ["Preheat oven to 350°F.", "Blend all ingredients until smooth.", "Pour into muffin tins.", "Bake for 15-18 minutes."],
-    servings: 12,
-    prepTime: 5,
-    cookTime: 18,
-    difficulty: "EASY",
-    image: "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=800&auto=format&fit=crop&q=80",
-    authorName: "Dawood Developer",
-    confidenceScore: 0.88,
-    tags: ["Healthy", "Quick & Easy"],
-    likesCount: 12,
-    commentsCount: 1,
-    isLikedByMe: false,
-    isSavedByMe: false
-  }
-];
-
 export default function Community() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [sortBy, setSortBy] = useState<"latest" | "trending">("latest");
+  const [totalCount, setTotalCount] = useState(0);
 
   const categories = ["All", "Italian", "Healthy", "Quick & Easy", "Dessert", "AI-Parsed"];
 
   useEffect(() => {
     async function fetchFeed() {
       setLoading(true);
+      setError(null);
       try {
         const queryParams = new URLSearchParams({
           search,
@@ -85,16 +49,20 @@ export default function Community() {
           sort: sortBy
         });
         
-        const response = await fetch(`http://localhost:5000/recipes/feed?${queryParams.toString()}`);
+        const response = await fetch(`${API_URL}/recipes/feed?${queryParams.toString()}`);
         if (response.ok) {
           const data = await response.json();
-          setRecipes(data.recipes.length > 0 ? data.recipes : mockRecipes);
+          setRecipes(data.recipes || []);
+          setTotalCount(data.pagination?.totalCount || 0);
         } else {
-          setRecipes(mockRecipes); // Fallback to mock
+          const errData = await response.json().catch(() => ({}));
+          setError(errData.error || `Server returned ${response.status}`);
+          setRecipes([]);
         }
-      } catch (error) {
-        console.warn("⚠️ Cannot fetch real-time feed (Backend API likely offline). Operating in visual mockup state.");
-        setRecipes(mockRecipes);
+      } catch (err) {
+        console.error("Feed fetch error:", err);
+        setError("Cannot connect to RecipeBook API. The backend may be starting up — please try again in a moment.");
+        setRecipes([]);
       } finally {
         setLoading(false);
       }
@@ -102,13 +70,13 @@ export default function Community() {
 
     const timer = setTimeout(() => {
       fetchFeed();
-    }, 300); // Debounce inputs
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [search, category, sortBy]);
 
-  // Dynamic like click handler
-  const handleLike = (id: string) => {
+  const handleLike = async (id: string) => {
+    // Optimistic UI update
     setRecipes(prev => prev.map(rec => {
       if (rec.id === id) {
         return {
@@ -119,25 +87,43 @@ export default function Community() {
       }
       return rec;
     }));
+
+    // Fire API call
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("rb_auth_token") : null;
+      if (token) {
+        await fetch(`${API_URL}/recipes/${id}/like`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+      }
+    } catch {}
   };
 
-  const handleSave = (id: string) => {
+  const handleSave = async (id: string) => {
     setRecipes(prev => prev.map(rec => {
       if (rec.id === id) {
-        return {
-          ...rec,
-          isSavedByMe: !rec.isSavedByMe
-        };
+        return { ...rec, isSavedByMe: !rec.isSavedByMe };
       }
       return rec;
     }));
+
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("rb_auth_token") : null;
+      if (token) {
+        await fetch(`${API_URL}/recipes/${id}/save`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+      }
+    } catch {}
   };
 
   return (
     <section className="py-12 bg-neutral-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header Pitch */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="space-y-3">
             <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-neutral-900 tracking-tight">
@@ -146,9 +132,12 @@ export default function Community() {
             <p className="text-neutral-600 max-w-xl">
               Explore recipes uploaded by foodies and parsed by AI. Only workable instructions with high confidence scores pass through.
             </p>
+            {totalCount > 0 && (
+              <p className="text-xs text-brand-600 font-semibold">{totalCount} recipes in the community</p>
+            )}
           </div>
           
-          {/* Sorting filter toggler */}
+          {/* Sorting filter */}
           <div className="flex gap-2 bg-neutral-200/60 p-1 rounded-xl self-start">
             <button 
               onClick={() => setSortBy("latest")}
@@ -165,7 +154,7 @@ export default function Community() {
           </div>
         </div>
 
-        {/* Search and Categories section */}
+        {/* Search and Categories */}
         <div className="space-y-6 mb-10">
           <div className="relative max-w-xl">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -178,7 +167,6 @@ export default function Community() {
             />
           </div>
 
-          {/* Categories tag rows */}
           <div className="flex flex-wrap gap-2.5">
             {categories.map(cat => (
               <button
@@ -199,34 +187,47 @@ export default function Community() {
         {/* Recipes Grid */}
         <AnimatePresence mode="popLayout">
           {loading ? (
-            // Skeleton Loader cards
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map(i => (
                 <div key={i} className="bg-white rounded-premium border border-neutral-200/60 p-4 space-y-4">
                   <div className="h-48 bg-neutral-200/60 rounded-xl animate-pulse" />
                   <div className="space-y-2">
-                    <div className="h-4.5 bg-neutral-200/60 rounded w-2/3 animate-pulse" />
+                    <div className="h-4 bg-neutral-200/60 rounded w-2/3 animate-pulse" />
                     <div className="h-3 bg-neutral-200/60 rounded w-full animate-pulse" />
                     <div className="h-3 bg-neutral-200/60 rounded w-5/6 animate-pulse" />
                   </div>
                 </div>
               ))}
             </div>
+          ) : error ? (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20 bg-white border border-brand-200/60 rounded-premium p-8"
+            >
+              <AlertCircle className="w-12 h-12 text-brand-400 mx-auto mb-4" />
+              <h3 className="font-display font-bold text-lg text-neutral-800">Connection Issue</h3>
+              <p className="text-neutral-500 text-sm max-w-md mx-auto mt-2">{error}</p>
+              <button 
+                onClick={() => { setSearch(s => s + " "); setTimeout(() => setSearch(s => s.trimEnd()), 100); }}
+                className="mt-6 inline-flex items-center gap-2 bg-brand-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-brand-700 transition-all"
+              >
+                Retry Connection
+              </button>
+            </motion.div>
           ) : recipes.length === 0 ? (
-            // Empty State
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center py-20 bg-white border border-neutral-200/60 rounded-premium p-8"
             >
               <Users className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-              <h3 className="font-display font-bold text-lg text-neutral-800">No Recipes Found</h3>
+              <h3 className="font-display font-bold text-lg text-neutral-800">No Recipes Yet</h3>
               <p className="text-neutral-500 text-sm max-w-sm mx-auto mt-2">
-                Try expanding your search query or switching category tags to find community culinary items.
+                The community feed is empty. Upload a recipe from the Android app to see it appear here!
               </p>
             </motion.div>
           ) : (
-            // Active cards rendering
             <motion.div 
               layout
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
@@ -239,15 +240,21 @@ export default function Community() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white rounded-premium border border-neutral-200/50 overflow-hidden shadow-premium hover:shadow-lg transition-premium group flex flex-col justify-between"
+                  className="bg-white rounded-premium border border-neutral-200/50 overflow-hidden shadow-premium hover:shadow-lg transition-all group flex flex-col justify-between"
                 >
-                  {/* Card Image preview & OCR accuracy stats */}
+                  {/* Card Image */}
                   <div className="relative h-48 sm:h-52 bg-neutral-100 overflow-hidden">
-                    <img 
-                      src={recipe.image} 
-                      alt={recipe.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {recipe.image ? (
+                      <img 
+                        src={recipe.image} 
+                        alt={recipe.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
+                        <Sparkles className="w-10 h-10 text-brand-300" />
+                      </div>
+                    )}
                     
                     {/* Confidence score badge */}
                     <div className="absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-brand-900/90 backdrop-blur-md text-white text-[10px] font-bold shadow-lg">
@@ -265,7 +272,7 @@ export default function Community() {
                   <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-brand-600">
-                        {recipe.tags[0] || "Recipe"}
+                        {recipe.tags?.[0] || "Recipe"}
                       </div>
                       
                       <Link href={`/recipe/${recipe.id}`} className="block">
@@ -275,7 +282,7 @@ export default function Community() {
                       </Link>
                       
                       <p className="text-neutral-500 text-xs sm:text-sm line-clamp-2 leading-relaxed">
-                        {recipe.description || "A gorgeous food formulation extracted by RecipeBook AI."}
+                        {recipe.description || "A recipe extracted by RecipeBook AI."}
                       </p>
                     </div>
 
@@ -291,7 +298,7 @@ export default function Community() {
                       </div>
                     </div>
 
-                    {/* Bottom controls bar */}
+                    {/* Bottom controls */}
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-[11px] text-neutral-500">
                         By <span className="font-bold text-neutral-700">{recipe.authorName}</span>
