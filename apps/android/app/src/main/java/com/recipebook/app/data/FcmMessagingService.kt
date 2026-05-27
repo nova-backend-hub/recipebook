@@ -11,13 +11,16 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.recipebook.app.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class FcmMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
         
-        Log.d("FCM_PUSH", "Received background FCM alert stream: ${remoteMessage.notification?.title}")
+        Log.d("FCM_PUSH", "Received push notification: ${remoteMessage.notification?.title}")
         
         val title = remoteMessage.notification?.title ?: "RecipeBook Update"
         val body = remoteMessage.notification?.body ?: "Tap to open recipes."
@@ -27,8 +30,18 @@ class FcmMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d("FCM_PUSH", "New device token generated: $token")
-        // In real app, push token is registered to server database via POST /auth/push-token
+        Log.d("FCM_PUSH", "New FCM token generated: $token")
+        
+        // Register token with backend API
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val repository = RecipeRepository(applicationContext)
+                repository.registerPushToken(token)
+                Log.d("FCM_PUSH", "Token registered with backend successfully.")
+            } catch (e: Exception) {
+                Log.w("FCM_PUSH", "Failed to register token with backend.", e)
+            }
+        }
     }
 
     private fun showNotification(title: String, body: String) {
@@ -50,7 +63,7 @@ class FcmMessagingService : FirebaseMessagingService() {
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES,O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
                 "RecipeBook notifications",
