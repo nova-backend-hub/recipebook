@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "com.recipebook.app"
+    namespace = "com.soli.recipebook"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.recipebook.app"
+        applicationId = "com.soli.recipebook"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.recipebook.app.presentation
+package com.soli.recipebook.presentation
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -21,8 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.recipebook.app.data.RecipeEntity
-import com.recipebook.app.presentation.theme.*
+import com.soli.recipebook.data.RecipeEntity
+import com.soli.recipebook.presentation.theme.*
 
 // Simple Navigation routes
 sealed class Screen(val route: String) {

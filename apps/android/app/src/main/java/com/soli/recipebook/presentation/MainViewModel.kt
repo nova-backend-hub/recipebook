@@ -1,11 +1,11 @@
-package com.recipebook.app.presentation
+package com.soli.recipebook.presentation
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.recipebook.app.data.RecipeEntity
-import com.recipebook.app.data.RecipeRepository
-import com.recipebook.app.data.UploadRecipeResponse
+import com.soli.recipebook.data.RecipeEntity
+import com.soli.recipebook.data.RecipeRepository
+import com.soli.recipebook.data.UploadRecipeResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

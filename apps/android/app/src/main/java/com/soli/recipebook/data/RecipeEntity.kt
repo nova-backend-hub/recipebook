@@ -1,4 +1,4 @@
-package com.recipebook.app.data
+package com.soli.recipebook.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

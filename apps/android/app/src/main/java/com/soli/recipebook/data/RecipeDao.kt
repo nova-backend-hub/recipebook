@@ -1,4 +1,4 @@
-package com.recipebook.app.data
+package com.soli.recipebook.data
 
 import androidx.room.Dao
 import androidx.room.Insert

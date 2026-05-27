@@ -1,4 +1,4 @@
-package com.recipebook.app.data
+package com.soli.recipebook.data
 
 import android.content.Context
 import android.util.Log

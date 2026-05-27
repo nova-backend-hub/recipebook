@@ -1,4 +1,4 @@
-package com.recipebook.app.data
+package com.soli.recipebook.data
 
 import retrofit2.Response
 import retrofit2.Retrofit

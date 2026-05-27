@@ -1,4 +1,4 @@
-package com.recipebook.app.presentation.theme
+package com.soli.recipebook.presentation.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

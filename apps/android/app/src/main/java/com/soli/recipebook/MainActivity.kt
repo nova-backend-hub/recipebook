@@ -1,4 +1,4 @@
-package com.recipebook.app
+package com.soli.recipebook
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,8 +9,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.recipebook.app.presentation.*
-import com.recipebook.app.presentation.theme.RecipeBookTheme
+import com.soli.recipebook.presentation.*
+import com.soli.recipebook.presentation.theme.RecipeBookTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
