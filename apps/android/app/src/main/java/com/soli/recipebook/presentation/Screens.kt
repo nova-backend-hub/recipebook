@@ -407,7 +407,7 @@ fun CameraOcrScreen(viewModel: MainViewModel, onNavigateBack: () -> Unit) {
                         
                         Button(
                             onClick = {
-                                viewModel.performCameraOcrExtraction(rawCapturedText)
+                                viewModel.uploadOcrText(rawCapturedText)
                                 onNavigateBack()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = CrimsonRed),
